@@ -1,0 +1,50 @@
+name: LocalRAG CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/api/requirements.txt
+
+      - name: Lint
+        run: ruff check apps tests
+
+      - name: Test
+        run: pytest tests
+
+      - name: Dependency audit
+        run: |
+          pip install pip-audit
+          pip-audit -r apps/api/requirements.txt
+
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t localrag-api ./apps/api
+
+      - name: Container scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: localrag-api
+          format: table
+          exit-code: "1"
+          severity: CRITICAL,HIGH
