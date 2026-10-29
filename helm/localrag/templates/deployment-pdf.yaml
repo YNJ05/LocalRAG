@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "localrag.fullname" . }}-pdf-microservice
+  labels:
+    {{- include "localrag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: pdf-microservice
+spec:
+  replicas: {{ .Values.pdfMicroservice.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "localrag.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: pdf-microservice
+  template:
+    metadata:
+      labels:
+        {{- include "localrag.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: pdf-microservice
+    spec:
+      containers:
+        - name: pdf-microservice
+          image: "{{ .Values.pdfMicroservice.image.repository }}:{{ .Values.pdfMicroservice.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.pdfMicroservice.service.port }}
+              name: http
+          env:
+            - name: PORT
+              value: {{ .Values.pdfMicroservice.service.port | quote }}
+            - name: STORAGE_PATH
+              value: {{ .Values.pdfMicroservice.storagePath | quote }}
+            - name: RAG_SERVICE_URL
+              value: "http://{{ include "localrag.fullname" . }}-rag-service:{{ .Values.ragMicroservice.service.port }}"
+          volumeMounts:
+            - name: pdf-storage
+              mountPath: {{ .Values.pdfMicroservice.storagePath }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: {{ .Values.pdfMicroservice.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health/live
+              port: {{ .Values.pdfMicroservice.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.pdfMicroservice.resources | nindent 12 }}
+      volumes:
+        - name: pdf-storage
+          {{- if .Values.pdfMicroservice.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "localrag.fullname" . }}-pdf-storage-pvc
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

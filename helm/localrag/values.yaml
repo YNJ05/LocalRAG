@@ -1,0 +1,156 @@
+# Default values for localrag Helm chart.
+
+global:
+  imagePullPolicy: IfNotPresent
+  storageClass: ""
+
+# ---------------------------------------------------------------------------
+# Ollama Local LLM & Embedding Server
+# ---------------------------------------------------------------------------
+ollama:
+  enabled: true
+  image:
+    repository: ollama/ollama
+    tag: latest
+  service:
+    type: ClusterIP
+    port: 11434
+  persistence:
+    enabled: true
+    size: 15Gi
+    accessModes:
+      - ReadWriteOnce
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+
+# ---------------------------------------------------------------------------
+# Qdrant Vector Database
+# ---------------------------------------------------------------------------
+qdrant:
+  enabled: true
+  image:
+    repository: qdrant/qdrant
+    tag: v1.12.5
+  service:
+    type: ClusterIP
+    httpPort: 6333
+    grpcPort: 6334
+  persistence:
+    enabled: true
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+# ---------------------------------------------------------------------------
+# PDF Microservice
+# ---------------------------------------------------------------------------
+pdfMicroservice:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/ynj05/localrag-pdf-microservice
+    tag: latest
+  service:
+    type: ClusterIP
+    port: 8001
+  persistence:
+    enabled: true
+    size: 5Gi
+    accessModes:
+      - ReadWriteOnce
+  storagePath: /data/documents
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+# ---------------------------------------------------------------------------
+# RAG Microservice
+# ---------------------------------------------------------------------------
+ragMicroservice:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/ynj05/localrag-rag-microservice
+    tag: latest
+  service:
+    type: ClusterIP
+    port: 8002
+  embeddingModel: "nomic-embed-text:latest"
+  collection: "localrag_chunks"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+# ---------------------------------------------------------------------------
+# Chat Microservice
+# ---------------------------------------------------------------------------
+chatMicroservice:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/ynj05/localrag-chat-microservice
+    tag: latest
+  service:
+    type: ClusterIP
+    port: 8003
+  chatModel: "qwen2.5:0.5b"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+# ---------------------------------------------------------------------------
+# Frontend (Streamlit UI)
+# ---------------------------------------------------------------------------
+frontend:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/ynj05/localrag-frontend
+    tag: latest
+  service:
+    type: NodePort
+    port: 8501
+    nodePort: 30501
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+# ---------------------------------------------------------------------------
+# Ingress Controller
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "25m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "180"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "180"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  host: localrag.local
+  tls: []

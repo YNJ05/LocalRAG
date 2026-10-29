@@ -1,0 +1,15 @@
+apiVersion: v2
+name: localrag
+description: A production-ready Helm chart for LocalRAG decoupled microservices architecture
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - rag
+  - microservices
+  - ai
+  - kubernetes
+  - llm
+maintainers:
+  - name: Yassine Najmi
+    email: yassinnajmi5@gmail.com

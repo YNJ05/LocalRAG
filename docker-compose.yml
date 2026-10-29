@@ -1,42 +1,63 @@
 name: localrag
 
 services:
-  api:
-    build: ./apps/api
-    command: uvicorn main:app --host 0.0.0.0 --port 8000
-    env_file: [ { path: .env, required: false } ]
-    environment:
-      QDRANT_URL: http://localhost:6333
-      OLLAMA_URL: http://localhost:11434
-      STORAGE_PATH: /data/documents
-    volumes: [ documents:/data/documents ]
-    network_mode: "host"
-    depends_on: [ qdrant ]
-
-  web:
-    build: ./apps/web
-    environment: { NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1 }
-    ports: [ "8080:3000" ]
-    depends_on: [ api ]
-
   qdrant:
     image: qdrant/qdrant:v1.12.5
-    ports: [ "6333:6333" ]
+    network_mode: "host"
     volumes: [ qdrant:/qdrant/storage ]
+
+  pdf-microservice:
+    build: ./microservices/pdf_microservice
+    network_mode: "host"
+    environment:
+      PORT: 8001
+      STORAGE_PATH: /data/documents
+      RAG_SERVICE_URL: http://localhost:8002
+    volumes: [ documents:/data/documents ]
+    depends_on: [ rag-microservice ]
+
+  rag-microservice:
+    build: ./microservices/rag_microservice
+    network_mode: "host"
+    environment:
+      PORT: 8002
+      QDRANT_URL: http://localhost:6333
+      OLLAMA_URL: http://localhost:11434
+      EMBEDDING_MODEL: nomic-embed-text:latest
+      QDRANT_COLLECTION: localrag_chunks
+    depends_on: [ qdrant ]
+
+  chat-microservice:
+    build: ./microservices/chat_microservice
+    network_mode: "host"
+    environment:
+      PORT: 8003
+      RAG_SERVICE_URL: http://localhost:8002
+      OLLAMA_URL: http://localhost:11434
+      CHAT_MODEL: qwen2.5:0.5b
+    depends_on: [ rag-microservice ]
+
+  frontend:
+    build: ./frontend
+    network_mode: "host"
+    environment:
+      PDF_SERVICE_URL: http://localhost:8001
+      RAG_SERVICE_URL: http://localhost:8002
+      CHAT_SERVICE_URL: http://localhost:8003
+    depends_on: [ pdf-microservice, chat-microservice ]
 
   prometheus:
     image: prom/prometheus:v2.55.1
-    profiles: [ observability ]
-    volumes: [ "./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" ]
-    networks: [ default ]
+    network_mode: "host"
+    volumes: [ "./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" ]
 
   grafana:
     image: grafana/grafana:11.3.0
-    profiles: [ observability ]
-    ports: [ "3001:3000" ]
-    volumes: [ "./infra/grafana:/etc/grafana/provisioning:ro" ]
+    network_mode: "host"
+    environment:
+      - GF_SERVER_HTTP_PORT=3001
+    volumes: [ "./monitoring/grafana:/etc/grafana/provisioning:ro" ]
     depends_on: [ prometheus ]
-    networks: [ default ]
 
 volumes:
   documents:

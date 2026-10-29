@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "localrag.fullname" . }}-ui-frontend
+  labels:
+    {{- include "localrag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ui-frontend
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "localrag.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ui-frontend
+  template:
+    metadata:
+      labels:
+        {{- include "localrag.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: ui-frontend
+    spec:
+      containers:
+        - name: ui-frontend
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.frontend.service.port }}
+              name: http
+          env:
+            - name: PDF_SERVICE_URL
+              value: "http://{{ include "localrag.fullname" . }}-pdf-service:{{ .Values.pdfMicroservice.service.port }}"
+            - name: RAG_SERVICE_URL
+              value: "http://{{ include "localrag.fullname" . }}-rag-service:{{ .Values.ragMicroservice.service.port }}"
+            - name: CHAT_SERVICE_URL
+              value: "http://{{ include "localrag.fullname" . }}-chat-service:{{ .Values.chatMicroservice.service.port }}"
+          livenessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: {{ .Values.frontend.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: {{ .Values.frontend.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.frontend.resources | nindent 12 }}

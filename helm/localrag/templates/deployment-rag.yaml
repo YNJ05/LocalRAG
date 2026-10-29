@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "localrag.fullname" . }}-rag-microservice
+  labels:
+    {{- include "localrag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rag-microservice
+spec:
+  replicas: {{ .Values.ragMicroservice.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "localrag.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: rag-microservice
+  template:
+    metadata:
+      labels:
+        {{- include "localrag.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: rag-microservice
+    spec:
+      containers:
+        - name: rag-microservice
+          image: "{{ .Values.ragMicroservice.image.repository }}:{{ .Values.ragMicroservice.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.ragMicroservice.service.port }}
+              name: http
+          env:
+            - name: PORT
+              value: {{ .Values.ragMicroservice.service.port | quote }}
+            - name: QDRANT_URL
+              value: "http://{{ include "localrag.fullname" . }}-qdrant-service:{{ .Values.qdrant.service.httpPort }}"
+            - name: OLLAMA_URL
+              value: "http://{{ include "localrag.fullname" . }}-ollama-service:{{ .Values.ollama.service.port }}"
+            - name: EMBEDDING_MODEL
+              value: {{ .Values.ragMicroservice.embeddingModel | quote }}
+            - name: QDRANT_COLLECTION
+              value: {{ .Values.ragMicroservice.collection | quote }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: {{ .Values.ragMicroservice.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health/live
+              port: {{ .Values.ragMicroservice.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.ragMicroservice.resources | nindent 12 }}

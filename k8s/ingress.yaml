@@ -1,0 +1,52 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: localrag-ingress
+  namespace: localrag
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "25m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "180"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "180"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+    - host: localrag.local
+      http:
+        paths:
+          - path: /api/v1/documents
+            pathType: Prefix
+            backend:
+              service:
+                name: pdf-service
+                port:
+                  number: 8001
+          - path: /api/v1/rag
+            pathType: Prefix
+            backend:
+              service:
+                name: rag-service
+                port:
+                  number: 8002
+          - path: /api/v1/chat
+            pathType: Prefix
+            backend:
+              service:
+                name: chat-service
+                port:
+                  number: 8003
+          - path: /api/v1/session
+            pathType: Prefix
+            backend:
+              service:
+                name: chat-service
+                port:
+                  number: 8003
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ui-service
+                port:
+                  number: 8501

@@ -1,0 +1,41 @@
+{{- if .Values.ollama.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "localrag.fullname" . }}-ollama
+  labels:
+    {{- include "localrag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "localrag.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ollama
+  template:
+    metadata:
+      labels:
+        {{- include "localrag.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: ollama
+    spec:
+      containers:
+        - name: ollama
+          image: "{{ .Values.ollama.image.repository }}:{{ .Values.ollama.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.ollama.service.port }}
+              name: http
+          volumeMounts:
+            - name: ollama-storage
+              mountPath: /root/.ollama
+          resources:
+            {{- toYaml .Values.ollama.resources | nindent 12 }}
+      volumes:
+        - name: ollama-storage
+          {{- if .Values.ollama.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "localrag.fullname" . }}-ollama-pvc
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+{{- end }}

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "localrag.fullname" . }}-chat-service
+  labels:
+    {{- include "localrag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: chat-microservice
+spec:
+  type: {{ .Values.chatMicroservice.service.type }}
+  ports:
+    - port: {{ .Values.chatMicroservice.service.port }}
+      targetPort: {{ .Values.chatMicroservice.service.port }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "localrag.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: chat-microservice

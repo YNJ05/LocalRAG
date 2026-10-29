@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui-frontend
+  namespace: localrag
+  labels:
+    app: ui-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ui-frontend
+  template:
+    metadata:
+      labels:
+        app: ui-frontend
+    spec:
+      containers:
+        - name: ui-frontend
+          image: localrag/frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8501
+              name: http
+          env:
+            - name: PDF_SERVICE_URL
+              value: "http://pdf-service:8001"
+            - name: RAG_SERVICE_URL
+              value: "http://rag-service:8002"
+            - name: CHAT_SERVICE_URL
+              value: "http://chat-service:8003"
+          livenessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui-service
+  namespace: localrag
+  labels:
+    app: ui-frontend
+spec:
+  type: NodePort
+  ports:
+    - port: 8501
+      targetPort: 8501
+      nodePort: 30501
+      protocol: TCP
+      name: http
+  selector:
+    app: ui-frontend

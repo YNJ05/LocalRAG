@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-microservice
+  namespace: localrag
+  labels:
+    app: chat-microservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chat-microservice
+  template:
+    metadata:
+      labels:
+        app: chat-microservice
+    spec:
+      containers:
+        - name: chat-microservice
+          image: localrag/chat-microservice:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8003
+              name: http
+          env:
+            - name: PORT
+              value: "8003"
+            - name: RAG_SERVICE_URL
+              value: "http://rag-service:8002"
+            - name: OLLAMA_URL
+              value: "http://ollama-service:11434"
+            - name: CHAT_MODEL
+              value: "qwen2.5:0.5b"
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8003
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health/live
+              port: 8003
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-service
+  namespace: localrag
+  labels:
+    app: chat-microservice
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8003
+      targetPort: 8003
+      protocol: TCP
+      name: http
+  selector:
+    app: chat-microservice

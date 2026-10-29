@@ -1,0 +1,56 @@
+{{- if .Values.ollama.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "localrag.fullname" . }}-ollama-pvc
+  labels:
+    {{- include "localrag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ollama
+spec:
+  accessModes:
+    {{- toYaml .Values.ollama.persistence.accessModes | nindent 4 }}
+  {{- if .Values.global.storageClass }}
+  storageClassName: {{ .Values.global.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.ollama.persistence.size }}
+---
+{{- end }}
+{{- if .Values.qdrant.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "localrag.fullname" . }}-qdrant-pvc
+  labels:
+    {{- include "localrag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: qdrant
+spec:
+  accessModes:
+    {{- toYaml .Values.qdrant.persistence.accessModes | nindent 4 }}
+  {{- if .Values.global.storageClass }}
+  storageClassName: {{ .Values.global.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.qdrant.persistence.size }}
+---
+{{- end }}
+{{- if .Values.pdfMicroservice.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "localrag.fullname" . }}-pdf-storage-pvc
+  labels:
+    {{- include "localrag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: pdf-microservice
+spec:
+  accessModes:
+    {{- toYaml .Values.pdfMicroservice.persistence.accessModes | nindent 4 }}
+  {{- if .Values.global.storageClass }}
+  storageClassName: {{ .Values.global.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.pdfMicroservice.persistence.size }}
+{{- end }}

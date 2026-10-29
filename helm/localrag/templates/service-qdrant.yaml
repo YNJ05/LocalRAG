@@ -1,0 +1,23 @@
+{{- if .Values.qdrant.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "localrag.fullname" . }}-qdrant-service
+  labels:
+    {{- include "localrag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: qdrant
+spec:
+  type: {{ .Values.qdrant.service.type }}
+  ports:
+    - port: {{ .Values.qdrant.service.httpPort }}
+      targetPort: {{ .Values.qdrant.service.httpPort }}
+      protocol: TCP
+      name: http
+    - port: {{ .Values.qdrant.service.grpcPort }}
+      targetPort: {{ .Values.qdrant.service.grpcPort }}
+      protocol: TCP
+      name: grpc
+  selector:
+    {{- include "localrag.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: qdrant
+{{- end }}

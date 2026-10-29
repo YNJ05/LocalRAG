@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "localrag.fullname" . }}-rag-service
+  labels:
+    {{- include "localrag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rag-microservice
+spec:
+  type: {{ .Values.ragMicroservice.service.type }}
+  ports:
+    - port: {{ .Values.ragMicroservice.service.port }}
+      targetPort: {{ .Values.ragMicroservice.service.port }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "localrag.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: rag-microservice

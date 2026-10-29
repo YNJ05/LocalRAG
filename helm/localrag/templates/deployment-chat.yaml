@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "localrag.fullname" . }}-chat-microservice
+  labels:
+    {{- include "localrag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: chat-microservice
+spec:
+  replicas: {{ .Values.chatMicroservice.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "localrag.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: chat-microservice
+  template:
+    metadata:
+      labels:
+        {{- include "localrag.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: chat-microservice
+    spec:
+      containers:
+        - name: chat-microservice
+          image: "{{ .Values.chatMicroservice.image.repository }}:{{ .Values.chatMicroservice.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.chatMicroservice.service.port }}
+              name: http
+          env:
+            - name: PORT
+              value: {{ .Values.chatMicroservice.service.port | quote }}
+            - name: RAG_SERVICE_URL
+              value: "http://{{ include "localrag.fullname" . }}-rag-service:{{ .Values.ragMicroservice.service.port }}"
+            - name: OLLAMA_URL
+              value: "http://{{ include "localrag.fullname" . }}-ollama-service:{{ .Values.ollama.service.port }}"
+            - name: CHAT_MODEL
+              value: {{ .Values.chatMicroservice.chatModel | quote }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: {{ .Values.chatMicroservice.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health/live
+              port: {{ .Values.chatMicroservice.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.chatMicroservice.resources | nindent 12 }}
