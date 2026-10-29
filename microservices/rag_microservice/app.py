@@ -8,7 +8,14 @@ from fastapi.responses import Response
 from prometheus_client import Counter, Histogram, make_asgi_app
 from pydantic import BaseModel, Field
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, PointStruct, VectorParams
+from qdrant_client.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchValue,
+    PointStruct,
+    VectorParams,
+)
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -143,7 +150,7 @@ def index_document_chunks(payload: IndexRequest):
 
     except Exception as exc:
         rag_requests_total.labels(route="/api/v1/rag/index", status="500").inc()
-        raise HTTPException(status_code=500, detail=f"Indexing failed: {str(exc)}")
+        raise HTTPException(status_code=500, detail=f"Indexing failed: {exc!s}")
 
 
 @app.post("/api/v1/rag/query")
@@ -188,7 +195,7 @@ def query_relevant_chunks(payload: QueryRequest):
 
     except Exception as exc:
         rag_requests_total.labels(route="/api/v1/rag/query", status="500").inc()
-        raise HTTPException(status_code=500, detail=f"Retrieval failed: {str(exc)}")
+        raise HTTPException(status_code=500, detail=f"Retrieval failed: {exc!s}")
 
 
 @app.delete("/api/v1/rag/documents/{document_id}", status_code=204)
@@ -210,7 +217,7 @@ def delete_document_vectors(document_id: str, x_session_id: str | None = Header(
         return Response(status_code=204)
     except Exception as exc:
         rag_requests_total.labels(route="/api/v1/rag/documents/{id}", status="500").inc()
-        raise HTTPException(status_code=500, detail=f"Failed to delete document vectors: {str(exc)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete document vectors: {exc!s}")
 
 
 @app.delete("/api/v1/rag/sessions/{session_id}", status_code=204)
@@ -228,4 +235,4 @@ def delete_session_vectors(session_id: str):
         return Response(status_code=204)
     except Exception as exc:
         rag_requests_total.labels(route="/api/v1/rag/sessions/{id}", status="500").inc()
-        raise HTTPException(status_code=500, detail=f"Failed to delete session vectors: {str(exc)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete session vectors: {exc!s}")

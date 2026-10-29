@@ -1,0 +1,7 @@
+target-version = "py312"
+line-length = 120
+exclude = [".venv"]
+
+[lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]

@@ -126,7 +126,7 @@ async def chat(payload: ChatRequest, x_session_id: str | None = Header(None)):
             sources = rag_data.get("sources", [])
     except httpx.RequestError as exc:
         chat_requests_total.labels(route="/api/v1/chat", status="503").inc()
-        raise HTTPException(status_code=503, detail=f"Failed to reach RAG microservice: {str(exc)}")
+        raise HTTPException(status_code=503, detail=f"Failed to reach RAG microservice: {exc!s}")
 
     # If no sources found
     if not sources:
@@ -165,7 +165,7 @@ async def chat(payload: ChatRequest, x_session_id: str | None = Header(None)):
             }
         except Exception as exc:
             chat_requests_total.labels(route="/api/v1/chat", status="500").inc()
-            raise HTTPException(status_code=500, detail=f"LLM generation failed: {str(exc)}")
+            raise HTTPException(status_code=500, detail=f"LLM generation failed: {exc!s}")
 
     # Streaming SSE branch
     async def stream_response():
@@ -177,7 +177,7 @@ async def chat(payload: ChatRequest, x_session_id: str | None = Header(None)):
                 for token in _stream_ollama(prompt):
                     yield {"event": "token", "data": token}
         except Exception as exc:
-            yield {"event": "error", "data": f"Model error: {str(exc)}"}
+            yield {"event": "error", "data": f"Model error: {exc!s}"}
 
         yield {"event": "done", "data": ""}
 

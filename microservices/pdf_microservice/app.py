@@ -20,7 +20,7 @@ from prometheus_client import Counter, Histogram, make_asgi_app
 # Configuration
 # ---------------------------------------------------------------------------
 STORAGE_PATH = os.getenv("STORAGE_PATH", "/data/documents")
-MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", 20 * 1024 * 1024))
+MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(20 * 1024 * 1024)))
 RAG_SERVICE_URL = os.getenv("RAG_SERVICE_URL", "http://localhost:8002").rstrip("/")
 
 # ---------------------------------------------------------------------------
@@ -164,7 +164,7 @@ async def upload_document(
             destination.unlink(missing_ok=True)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=f"Failed to communicate with RAG microservice: {str(exc)}",
+                detail=f"Failed to communicate with RAG microservice: {exc!s}",
             )
 
         # Track document in session
