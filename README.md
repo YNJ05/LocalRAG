@@ -4,7 +4,7 @@ A private, offline document assistant built with a decoupled microservices archi
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 - **Frontend**: Streamlit web interface (`:8501`)
 - **PDF Microservice**: PDF text extraction, chunking, and file storage (`:8001`)
@@ -18,7 +18,7 @@ A private, offline document assistant built with a decoupled microservices archi
 
 ---
 
-## 🚀 Quick Start (Docker Compose)
+## Quick Start (Docker Compose)
 
 ### 1. Ensure Ollama models are pulled
 ```bash
@@ -38,7 +38,7 @@ docker compose up -d
 
 ---
 
-## ☸️ Kubernetes & Helm
+## Kubernetes & Helm
 
 ### Deploy with Helm
 ```bash
@@ -59,7 +59,7 @@ Then visit [http://localrag.local](http://localrag.local).
 
 ---
 
-## 🔒 CI/CD & DevSecOps
+## CI/CD & DevSecOps
 
 The GitHub Actions workflow automatically runs:
 - **Gitleaks**: Secret detection
